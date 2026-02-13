@@ -1,0 +1,2 @@
+-keep class org.ethereumhpone.ipc.** { *; }
+-keep interface org.ethereumhpone.ipc.** { *; }
