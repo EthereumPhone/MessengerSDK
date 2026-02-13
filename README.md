@@ -46,14 +46,13 @@ sdk.unbindAll()
 
 ## Permissions
 
-The SDK requires permissions granted by the XMTP Messenger app:
+Only the **MessagingClient** (send as user) requires a runtime permission. The **IdentityClient** (isolated identity) is permission-free — any app can bind and create its own identity.
 
-| Permission | Purpose |
-|---|---|
-| `SEND_MESSAGE_AS_USER` | Send messages as the Messenger's logged-in user |
-| `GENERATE_XMTP_IDENTITY` | Create an isolated XMTP identity and send from it |
+| Permission | Required by | Purpose |
+|---|---|---|
+| `SEND_MESSAGE_AS_USER` | `MessagingClient` | Send messages as the Messenger's logged-in user |
 
-Check and request permissions:
+Check and request the permission:
 
 ```kotlin
 if (!MessengerPermissions.hasSendPermission(context)) {

@@ -26,14 +26,6 @@ class MessengerPermissionsTest {
     }
 
     @Test
-    fun `GENERATE_XMTP_IDENTITY constant is correct`() {
-        assertEquals(
-            "org.ethereumhpone.messenger.permission.GENERATE_XMTP_IDENTITY",
-            MessengerPermissions.GENERATE_XMTP_IDENTITY
-        )
-    }
-
-    @Test
     fun `hasSendPermission returns true when granted`() {
         every {
             mockContext.checkSelfPermission(MessengerPermissions.SEND_MESSAGE_AS_USER)
@@ -49,24 +41,6 @@ class MessengerPermissionsTest {
         } returns PackageManager.PERMISSION_DENIED
 
         assertFalse(MessengerPermissions.hasSendPermission(mockContext))
-    }
-
-    @Test
-    fun `hasIdentityPermission returns true when granted`() {
-        every {
-            mockContext.checkSelfPermission(MessengerPermissions.GENERATE_XMTP_IDENTITY)
-        } returns PackageManager.PERMISSION_GRANTED
-
-        assertTrue(MessengerPermissions.hasIdentityPermission(mockContext))
-    }
-
-    @Test
-    fun `hasIdentityPermission returns false when denied`() {
-        every {
-            mockContext.checkSelfPermission(MessengerPermissions.GENERATE_XMTP_IDENTITY)
-        } returns PackageManager.PERMISSION_DENIED
-
-        assertFalse(MessengerPermissions.hasIdentityPermission(mockContext))
     }
 
     @Test

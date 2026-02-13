@@ -43,15 +43,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestPermissions() {
-        val permsNeeded = mutableListOf<String>()
         if (!MessengerPermissions.hasSendPermission(this)) {
-            permsNeeded.add(MessengerPermissions.SEND_MESSAGE_AS_USER)
-        }
-        if (!MessengerPermissions.hasIdentityPermission(this)) {
-            permsNeeded.add(MessengerPermissions.GENERATE_XMTP_IDENTITY)
-        }
-        if (permsNeeded.isNotEmpty()) {
-            requestPermissions(permsNeeded.toTypedArray(), 100)
+            requestPermissions(arrayOf(MessengerPermissions.SEND_MESSAGE_AS_USER), 100)
         }
     }
 
