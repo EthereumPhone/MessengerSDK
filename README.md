@@ -4,10 +4,11 @@ Android library for communicating with the XMTP Messenger app via AIDL IPC. Wrap
 
 ## Installation
 
-Add JitPack to your project's `settings.gradle.kts`:
+**Step 1.** Add the JitPack repository to your project's `settings.gradle.kts` (inside the `dependencyResolutionManagement` block):
 
 ```kotlin
-dependencyResolution {
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
@@ -16,11 +17,13 @@ dependencyResolution {
 }
 ```
 
-Add the dependency:
+> If your project uses a root `build.gradle.kts` with `allprojects { repositories { ... } }` instead, add the maven line there.
+
+**Step 2.** Add the dependency to your app module's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.user:XMTPSdk:1.0.0")
+    implementation("com.github.EthereumPhone:MessengerSDK:0.1.0")
 }
 ```
 
