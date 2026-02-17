@@ -23,7 +23,7 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.EthereumPhone:MessengerSDK:0.2.0")
+    implementation("com.github.EthereumPhone:MessengerSDK:0.3.0")
 }
 ```
 
