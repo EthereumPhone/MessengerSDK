@@ -23,7 +23,7 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.EthereumPhone:MessengerSDK:0.4.0")
+    implementation("com.github.EthereumPhone:MessengerSDK:0.5.0")
 }
 ```
 
@@ -74,6 +74,7 @@ if (!MessengerPermissions.hasSendPermission(context)) {
 | `messaging` | `MessagingClient` for sending as the logged-in user |
 | `identity` | `IdentityClient` for isolated identity operations |
 | `unbindAll()` | Unbind all services |
+| `setNewMessageWakeupHandler(handler)` | (static) Register a callback for new-message broadcasts when the app is not running |
 
 ### MessagingClient
 
@@ -121,6 +122,23 @@ scope.launch {
 ```
 
 The callback is automatically registered when the service connects and unregistered on `unbind()`.
+
+#### Waking Up on New Messages (app not running)
+
+The `newMessages` flow only works while your app is bound to the identity service. To be notified even when your app is **not running**, register a wakeup handler in your `Application.onCreate()`:
+
+```kotlin
+class MyApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        MessengerSDK.setNewMessageWakeupHandler { context, messageCount ->
+            // Start your foreground service, show a notification, etc.
+        }
+    }
+}
+```
+
+The SDK ships a manifest-registered `BroadcastReceiver` that is automatically merged into your app's manifest. When Messenger detects new messages during its background sync, it sends an explicit broadcast that wakes your app and invokes the handler.
 
 #### Reading Messages
 
