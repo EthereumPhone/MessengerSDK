@@ -3,24 +3,49 @@ package org.ethereumhpone.messengersdk
 import android.content.Context
 import android.os.RemoteException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.withContext
+import org.ethereumhpone.ipc.IIdentityMessageCallback
 import org.ethereumhpone.ipc.IXmtpIdentityService
 import org.json.JSONArray
 
 class IdentityClient internal constructor(context: Context) {
 
+    private val _newMessages = MutableSharedFlow<Int>(extraBufferCapacity = 64)
+
+    /** Emits the count of new messages detected after each background sync. */
+    val newMessages: SharedFlow<Int> = _newMessages.asSharedFlow()
+
+    private val messageCallback = object : IIdentityMessageCallback.Stub() {
+        override fun onNewMessages(messageCount: Int) {
+            _newMessages.tryEmit(messageCount)
+        }
+    }
+
     internal val delegate = ServiceBindingDelegate<IXmtpIdentityService>(
         context = context,
         action = "org.ethereumhpone.messenger.action.BIND_IDENTITY",
-        asInterface = IXmtpIdentityService.Stub::asInterface
+        asInterface = IXmtpIdentityService.Stub::asInterface,
+        onConnected = { service ->
+            try {
+                service.registerMessageCallback(messageCallback)
+            } catch (_: RemoteException) { }
+        }
     )
 
     val connectionState: StateFlow<ConnectionState> get() = delegate.connectionState
 
     fun bind() = delegate.bind()
 
-    fun unbind() = delegate.unbind()
+    fun unbind() {
+        try {
+            delegate.service?.unregisterMessageCallback(messageCallback)
+        } catch (_: RemoteException) { }
+        delegate.unbind()
+    }
 
     suspend fun awaitConnected() = delegate.awaitConnected()
 

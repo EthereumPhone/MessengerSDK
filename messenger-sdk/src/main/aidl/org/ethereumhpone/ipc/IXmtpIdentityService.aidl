@@ -1,5 +1,7 @@
 package org.ethereumhpone.ipc;
 
+import org.ethereumhpone.ipc.IIdentityMessageCallback;
+
 interface IXmtpIdentityService {
     String createIdentity();
     boolean hasIdentity();
@@ -9,4 +11,6 @@ interface IXmtpIdentityService {
     void syncConversations();
     String getConversations();
     String getMessages(String conversationId, long afterNs);
+    void registerMessageCallback(IIdentityMessageCallback callback);
+    void unregisterMessageCallback(IIdentityMessageCallback callback);
 }

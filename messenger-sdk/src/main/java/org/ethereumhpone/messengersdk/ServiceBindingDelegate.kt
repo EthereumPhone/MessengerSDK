@@ -15,7 +15,8 @@ import kotlinx.coroutines.flow.first
 internal class ServiceBindingDelegate<T : IInterface>(
     private val context: Context,
     private val action: String,
-    private val asInterface: (IBinder) -> T
+    private val asInterface: (IBinder) -> T,
+    private val onConnected: ((T) -> Unit)? = null
 ) {
     private val _connectionState = MutableStateFlow(ConnectionState.DISCONNECTED)
     val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
@@ -26,8 +27,10 @@ internal class ServiceBindingDelegate<T : IInterface>(
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, binder: IBinder) {
-            service = asInterface(binder)
+            val svc = asInterface(binder)
+            service = svc
             _connectionState.value = ConnectionState.CONNECTED
+            onConnected?.invoke(svc)
         }
 
         override fun onServiceDisconnected(name: ComponentName) {

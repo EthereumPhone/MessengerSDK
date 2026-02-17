@@ -23,7 +23,7 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.EthereumPhone:MessengerSDK:0.3.0")
+    implementation("com.github.EthereumPhone:MessengerSDK:0.4.0")
 }
 ```
 
@@ -103,6 +103,24 @@ if (!MessengerPermissions.hasSendPermission(context)) {
 | `syncConversations()` | Sync conversations from the XMTP network |
 | `getConversations()` | Get list of `IdentityConversation` |
 | `getMessages(conversationId, afterNs)` | Get list of `IdentityMessage` for a conversation |
+| `newMessages` | `SharedFlow<Int>` — emits new-message counts after each background sync |
+
+#### Listening for New Messages
+
+```kotlin
+val sdk = MessengerSDK.getInstance(context)
+sdk.identity.bind()
+sdk.identity.awaitConnected()
+
+// Collect new-message notifications (fires after each background sync)
+scope.launch {
+    sdk.identity.newMessages.collect { count ->
+        Log.d("SDK", "$count new message(s) arrived")
+    }
+}
+```
+
+The callback is automatically registered when the service connects and unregistered on `unbind()`.
 
 #### Reading Messages
 
