@@ -196,6 +196,9 @@ interface IXmtpIdentityService {
     String getIdentityAddress();
     String getInboxId();
     String sendMessage(String recipientAddress, String body);
+    void syncConversations();
+    String getConversations();
+    String getMessages(String conversationId, long afterNs);
 }
 ```
 
@@ -256,7 +259,46 @@ suspend fun sendMessage(recipientAddress: String, body: String): String? {
 }
 ```
 
-### Step 4: Unbind when done
+### Step 4: Read messages
+
+Third-party identities can also receive and read messages. First sync from the network, then list conversations and fetch messages:
+
+```kotlin
+// Sync conversations from the XMTP network (call before reading)
+suspend fun sync() {
+    withContext(Dispatchers.IO) {
+        identityService?.syncConversations()
+    }
+}
+
+// Get all conversations as a JSON array
+suspend fun getConversations(): String? {
+    return withContext(Dispatchers.IO) {
+        identityService?.conversations
+    }
+}
+
+// Get messages for a conversation (afterNs = 0 for all messages)
+suspend fun getMessages(conversationId: String, afterNs: Long = 0): String? {
+    return withContext(Dispatchers.IO) {
+        identityService?.getMessages(conversationId, afterNs)
+    }
+}
+```
+
+**Conversation JSON format:**
+```json
+[{"id": "conv_abc", "peerAddress": "0x...", "createdAtMs": 1700000000000}]
+```
+
+**Message JSON format:**
+```json
+[{"id": "msg_123", "senderInboxId": "inbox_...", "body": "Hello", "sentAtMs": 1700000000000, "isMe": false}]
+```
+
+**Background sync:** The Messenger app automatically syncs all isolated identity clients every 5 minutes via the OS-level notification service. This means new messages will be available even when your app is not actively bound.
+
+### Step 5: Unbind when done
 
 ```kotlin
 override fun onDestroy() {
@@ -264,6 +306,35 @@ override fun onDestroy() {
     unbindService(identityConnection)
 }
 ```
+
+---
+
+## Reading Messages with the SDK Library
+
+If you use the `MessengerSDK` library (instead of raw AIDL), reading messages is even simpler:
+
+```kotlin
+val sdk = MessengerSDK.getInstance(context)
+val identity = sdk.identity
+
+identity.bind()
+identity.awaitConnected()
+
+// Create identity if needed
+identity.createIdentity()
+
+// Sync from network, then read
+identity.syncConversations()
+val conversations: List<IdentityConversation> = identity.getConversations()
+for (conv in conversations) {
+    val messages: List<IdentityMessage> = identity.getMessages(conv.id)
+    for (msg in messages) {
+        Log.d("SDK", "${msg.senderInboxId}: ${msg.body}")
+    }
+}
+```
+
+The SDK automatically parses the JSON into `IdentityConversation` and `IdentityMessage` data classes.
 
 ---
 
@@ -395,6 +466,9 @@ class MessagingActivity : AppCompatActivity() {
 | `getIdentityAddress()` | `String?` | The isolated identity's Ethereum address |
 | `getInboxId()` | `String?` | The isolated identity's XMTP inbox ID |
 | `sendMessage(address, body)` | `String?` | Send DM from isolated identity. Returns message ID |
+| `syncConversations()` | `void` | Syncs conversations from the XMTP network |
+| `getConversations()` | `String?` | JSON array of conversations (`[{"id","peerAddress","createdAtMs"}]`) |
+| `getMessages(convId, afterNs)` | `String?` | JSON array of messages (`[{"id","senderInboxId","body","sentAtMs","isMe"}]`) |
 
 ---
 

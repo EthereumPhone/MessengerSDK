@@ -107,6 +107,104 @@ class IdentityClientTest {
         client.sendMessage("0xAddr", "Hi")
     }
 
+    // --- syncConversations ---
+
+    @Test(expected = SdkException.ServiceNotConnectedException::class)
+    fun `syncConversations throws when not connected`() = runTest {
+        client.syncConversations()
+    }
+
+    @Test
+    fun `syncConversations delegates to AIDL stub when connected`() = runTest {
+        client.delegate.setServiceForTesting(mockService)
+
+        client.syncConversations()
+
+        verify { mockService.syncConversations() }
+    }
+
+    @Test(expected = SdkException.RemoteCallException::class)
+    fun `syncConversations wraps RemoteException`() = runTest {
+        every { mockService.syncConversations() } throws RemoteException("fail")
+        client.delegate.setServiceForTesting(mockService)
+
+        client.syncConversations()
+    }
+
+    // --- getConversations ---
+
+    @Test(expected = SdkException.ServiceNotConnectedException::class)
+    fun `getConversations throws when not connected`() = runTest {
+        client.getConversations()
+    }
+
+    @Test
+    fun `getConversations returns parsed list when connected`() = runTest {
+        val json = """[{"id":"conv-1","peerAddress":"0xPeer","createdAtMs":1000}]"""
+        every { mockService.conversations } returns json
+        client.delegate.setServiceForTesting(mockService)
+
+        val result = client.getConversations()
+
+        assertEquals(1, result.size)
+        assertEquals("conv-1", result[0].id)
+        assertEquals("0xPeer", result[0].peerAddress)
+        assertEquals(1000L, result[0].createdAtMs)
+    }
+
+    @Test
+    fun `getConversations returns empty list when service returns null`() = runTest {
+        every { mockService.conversations } returns null
+        client.delegate.setServiceForTesting(mockService)
+
+        val result = client.getConversations()
+
+        assertTrue(result.isEmpty())
+    }
+
+    // --- getMessages ---
+
+    @Test(expected = SdkException.ServiceNotConnectedException::class)
+    fun `getMessages throws when not connected`() = runTest {
+        client.getMessages("conv-1")
+    }
+
+    @Test
+    fun `getMessages returns parsed list when connected`() = runTest {
+        val json = """[{"id":"msg-1","senderInboxId":"inbox-a","body":"Hello","sentAtMs":2000,"isMe":false}]"""
+        every { mockService.getMessages("conv-1", 0) } returns json
+        client.delegate.setServiceForTesting(mockService)
+
+        val result = client.getMessages("conv-1")
+
+        assertEquals(1, result.size)
+        assertEquals("msg-1", result[0].id)
+        assertEquals("inbox-a", result[0].senderInboxId)
+        assertEquals("Hello", result[0].body)
+        assertEquals(2000L, result[0].sentAtMs)
+        assertFalse(result[0].isMe)
+    }
+
+    @Test
+    fun `getMessages returns empty list when service returns null`() = runTest {
+        every { mockService.getMessages("conv-1", 0) } returns null
+        client.delegate.setServiceForTesting(mockService)
+
+        val result = client.getMessages("conv-1")
+
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `getMessages passes afterNs parameter`() = runTest {
+        every { mockService.getMessages("conv-1", 5000000000) } returns "[]"
+        client.delegate.setServiceForTesting(mockService)
+
+        client.getMessages("conv-1", afterNs = 5000000000)
+
+        verify { mockService.getMessages("conv-1", 5000000000) }
+    }
+
     @Test
     fun `connectionState is CONNECTED after setServiceForTesting`() {
         client.delegate.setServiceForTesting(mockService)

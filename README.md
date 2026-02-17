@@ -100,6 +100,28 @@ if (!MessengerPermissions.hasSendPermission(context)) {
 | `getIdentityAddress()` | Get the isolated identity's address |
 | `getInboxId()` | Get the isolated identity's inbox ID |
 | `sendMessage(address, body)` | Send from the isolated identity |
+| `syncConversations()` | Sync conversations from the XMTP network |
+| `getConversations()` | Get list of `IdentityConversation` |
+| `getMessages(conversationId, afterNs)` | Get list of `IdentityMessage` for a conversation |
+
+#### Reading Messages
+
+```kotlin
+val sdk = MessengerSDK.getInstance(context)
+sdk.identity.bind()
+sdk.identity.awaitConnected()
+sdk.identity.createIdentity()
+
+// Sync from network, then read
+sdk.identity.syncConversations()
+val conversations = sdk.identity.getConversations()
+for (conv in conversations) {
+    val messages = sdk.identity.getMessages(conv.id)
+    messages.forEach { msg -> Log.d("MSG", "${msg.senderInboxId}: ${msg.body}") }
+}
+```
+
+The Messenger app also syncs all isolated identities in the background every 5 minutes, so new messages are available even when your app isn't running.
 
 ### Error Handling
 
